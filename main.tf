@@ -82,3 +82,11 @@ module "eip" {
   instance_id = ""
   tags   = "${merge(local.common_tags)}"
 }
+
+########################### NAT #############################
+module "nat" {
+  source = "./modules/nat-gateway"
+  eip_id = "${module.eip.eip_id}"
+  subnet_id = "${module.pub_subnet_a.subnet_id}"
+  tags   = "${merge(local.common_tags)}"
+}

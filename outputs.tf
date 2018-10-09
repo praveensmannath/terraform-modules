@@ -137,3 +137,22 @@ output "igw_id" {
 output "eip_id" {
    value = "${module.eip.eip_id}"
 }
+######################## NAT Gateway ############
+output "nat_id" {
+   value = "${module.nat.nat_id}"
+}
+output "nat_allocation_id" {
+   value = "${module.nat.nat_allocation_id}"
+}
+output "nat_subnet_id" {
+   value = "${module.nat.nat_subnet_id}"
+}
+output "nat_network_interface_id" {
+   value = "${module.nat.nat_network_interface_id}"
+}
+output "nat_private_ip " {
+   value = "${module.nat.nat_private_ip}"
+}
+output "nat_public_ip" {
+   value = "${module.nat.nat_public_ip}"
+}
