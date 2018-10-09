@@ -78,17 +78,17 @@ module "igw" {
 
 ########################### EIP #############################
 module "eip" {
-  source = "./modules/elastic-ip"
+  source      = "./modules/elastic-ip"
   instance_id = ""
-  tags   = "${merge(local.common_tags)}"
+  tags        = "${merge(local.common_tags)}"
 }
 
 ########################### NAT #############################
 module "nat" {
-  source = "./modules/nat-gateway"
-  eip_id = "${module.eip.eip_id}"
+  source    = "./modules/nat-gateway"
+  eip_id    = "${module.eip.eip_id}"
   subnet_id = "${module.pub_subnet_a.subnet_id}"
-  tags   = "${merge(local.common_tags)}"
+  tags      = "${merge(local.common_tags)}"
 }
 
 ########################### Route Tables #############################
@@ -102,4 +102,41 @@ module "private_rt" {
   source = "./modules/route-table"
   vpc_id = "${module.vpc.vpc_id}"
   tags   = "${merge(map("Name", "${var.name}-private-rt"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("RTType", "Private"))}"
+}
+
+############################ Route Table Asssociation #############################
+module "pub_a_rta" {
+  source         = "./modules/route-table-association"
+  subnet_id      = "${module.pub_subnet_a.subnet_id}"
+  route_table_id = "${module.public_rt.rt_id}"
+}
+
+module "pub_b_rta" {
+  source         = "./modules/route-table-association"
+  subnet_id      = "${module.pub_subnet_b.subnet_id}"
+  route_table_id = "${module.public_rt.rt_id}"
+}
+
+module "priv_a_rta" {
+  source         = "./modules/route-table-association"
+  subnet_id      = "${module.priv_subnet_a.subnet_id}"
+  route_table_id = "${module.private_rt.rt_id}"
+}
+
+module "priv_b_rta" {
+  source         = "./modules/route-table-association"
+  subnet_id      = "${module.priv_subnet_b.subnet_id}"
+  route_table_id = "${module.private_rt.rt_id}"
+}
+
+module "db_a_rta" {
+  source         = "./modules/route-table-association"
+  subnet_id      = "${module.db_subnet_a.subnet_id}"
+  route_table_id = "${module.private_rt.rt_id}"
+}
+
+module "db_b_rta" {
+  source         = "./modules/route-table-association"
+  subnet_id      = "${module.db_subnet_b.subnet_id}"
+  route_table_id = "${module.private_rt.rt_id}"
 }
