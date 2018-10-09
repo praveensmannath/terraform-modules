@@ -156,3 +156,10 @@ output "nat_private_ip " {
 output "nat_public_ip" {
    value = "${module.nat.nat_public_ip}"
 }
+#############################Route Tables ###################
+output "public_rt_id" {
+   value = "${module.public_rt.rt_id}"
+}
+output "private_rt_id" {
+   value = "${module.private_rt.rt_id}"
+}

@@ -90,3 +90,16 @@ module "nat" {
   subnet_id = "${module.pub_subnet_a.subnet_id}"
   tags   = "${merge(local.common_tags)}"
 }
+
+########################### Route Tables #############################
+module "public_rt" {
+  source = "./modules/route-table"
+  vpc_id = "${module.vpc.vpc_id}"
+  tags   = "${merge(map("Name", "${var.name}-public-rt"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("RTType", "Public"))}"
+}
+
+module "private_rt" {
+  source = "./modules/route-table"
+  vpc_id = "${module.vpc.vpc_id}"
+  tags   = "${merge(map("Name", "${var.name}-private-rt"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("RTType", "Private"))}"
+}
