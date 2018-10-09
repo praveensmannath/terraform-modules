@@ -140,3 +140,16 @@ module "db_b_rta" {
   subnet_id      = "${module.db_subnet_b.subnet_id}"
   route_table_id = "${module.private_rt.rt_id}"
 }
+
+###########################ROUTES #########################
+module "public_route" {
+  source         = "./modules/routes"
+  gateway_id      = "${module.igw.gateway_id}"
+  route_table_id = "${module.public_rt.rt_id}"
+}
+
+module "private_route" {
+  source         = "./modules/routes"
+  nat_gateway_id      = "${module.nat.nat_id}"
+  route_table_id = "${module.private_rt.rt_id}"
+}
