@@ -132,3 +132,8 @@ output "db_subnet_b_cidr" {
 output "igw_id" {
    value = "${module.igw.gateway_id}"
 }
+
+##########EIP ############
+output "eip_id" {
+   value = "${module.eip.eip_id}"
+}

@@ -75,3 +75,10 @@ module "igw" {
   vpc_id = "${module.vpc.vpc_id}"
   tags   = "${merge(local.common_tags)}"
 }
+
+########################### EIP #############################
+module "eip" {
+  source = "./modules/elastic-ip"
+  instance_id = ""
+  tags   = "${merge(local.common_tags)}"
+}
