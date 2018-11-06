@@ -144,12 +144,72 @@ module "db_b_rta" {
 ###########################ROUTES #########################
 module "public_route" {
   source         = "./modules/routes"
-  gateway_id      = "${module.igw.gateway_id}"
+  gateway_id     = "${module.igw.gateway_id}"
   route_table_id = "${module.public_rt.rt_id}"
 }
 
 module "private_route" {
   source         = "./modules/routes"
-  nat_gateway_id      = "${module.nat.nat_id}"
+  nat_gateway_id = "${module.nat.nat_id}"
   route_table_id = "${module.private_rt.rt_id}"
+}
+
+################################# SEC Groups  ############################################
+
+module "sg_elb" {
+  source      = "./modules/security-group"
+  name        = "elb_${var.name}"
+  vpc_id      = "${module.vpc.vpc_id}"
+  description = "SG for Load balancer"
+  tags        = "${local.common_tags}"
+}
+
+module "sg_web" {
+  source      = "./modules/security-group"
+  name        = "web_${var.name}"
+  vpc_id      = "${module.vpc.vpc_id}"
+  description = "SG for Web Server"
+  tags        = "${local.common_tags}"
+}
+
+module "sg_jumphost" {
+  source      = "./modules/security-group"
+  name        = "jumphost_${var.name}"
+  vpc_id      = "${module.vpc.vpc_id}"
+  description = "SF for Jump Host"
+  tags        = "${local.common_tags}"
+}
+
+module "sg_db" {
+  source      = "./modules/security-group"
+  name        = "db_${var.name}"
+  vpc_id      = "${module.vpc.vpc_id}"
+  description = "SG for Aurora DB"
+  tags        = "${local.common_tags}"
+}
+
+################################# SEC Group Rules Egress############################################
+
+module "sg_rules_jump_host" {
+  source            = "./modules/security-group-rules-cidr"
+  type              = "egress"
+  security_group_id = "${module.sg_jumphost.id}"
+}
+
+module "sg_rules_app_host" {
+  source            = "./modules/security-group-rules-cidr"
+  type              = "egress"
+  security_group_id = "${module.sg_web.id}"
+}
+
+module "sg_rules_db_host" {
+  source            = "./modules/security-group-rules-cidr"
+  type              = "egress"
+  security_group_id = "${module.sg_db.id}"
+}
+
+module "sg_rules_elb" {
+  source            = "./modules/security-group-rules-cidr"
+  type              = "egress"
+  security_group_id = "${module.sg_elb.id}"
 }
