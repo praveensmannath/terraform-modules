@@ -1,7 +1,3 @@
-variable "name" {
-  
-}
-variable "public_key" {
-  
-}
+variable "name" {}
 
+variable "public_key" {}

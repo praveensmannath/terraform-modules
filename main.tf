@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+    bucket = "${var.name}-terraform-states"
+    key    = "terraform.tfstate"
+    region = "${var.region}"
+  }
+}
+
 provider "aws" {
   region     = "${var.region}"
   access_key = "${var.access_key}"
@@ -265,6 +273,16 @@ module "sg_rules_db_host_3306" {
   protocol                 = "tcp"
 }
 
+module "sg_rules_db_host_3306_From_jump" {
+  source                   = "./modules/security-group-rules-sg"
+  type                     = "ingress"
+  security_group_id        = "${module.sg_db.id}"
+  source_security_group_id = "${module.sg_jumphost.id}"
+  from_port                = "3306"
+  to_port                  = "3306"
+  protocol                 = "tcp"
+}
+
 module "sg_rules_elb_80" {
   source            = "./modules/security-group-rules-cidr"
   type              = "ingress"
@@ -339,56 +357,74 @@ module "iam_role_ecr_policy" {
 ################################### Launch Configuraions #########################
 
 module "aws_ec2_key" {
-  source = "./modules/ec2-key"
-  name = "${var.name}-${var.env}"
+  source     = "./modules/ec2-key"
+  name       = "${var.name}-${var.env}"
   public_key = "${file("${path.module}/data/pub_keys/id_rsa.pub")}"
 }
 
 module "jump_host_lamunch_configuraions" {
-  source = "./modules/launch-configuration"
-  name_prefix = "${var.name}-${var.env}"
-  image_id = "${var.image_id}"
-  instance_type = "t2.micro"
-  key_name = "${module.aws_ec2_key.key_name}"
-  security_groups = "${module.sg_jumphost.id}"
+  source                      = "./modules/launch-configuration"
+  name_prefix                 = "${var.name}-${var.env}"
+  image_id                    = "${var.image_id}"
+  instance_type               = "t2.micro"
+  key_name                    = "${module.aws_ec2_key.key_name}"
+  security_groups             = "${module.sg_jumphost.id}"
   associate_public_ip_address = true
-  volume_size = "10"
+  volume_size                 = "10"
 }
 
 module "iam_instance_profile" {
-  source = "./modules/iam-instance-profile"
+  source      = "./modules/iam-instance-profile"
   name_prefix = "${var.name}-${var.env}"
-  role = "${module.iam_role.name}"
+  role        = "${module.iam_role.name}"
 }
 
 module "web_server_lamunch_configuraions" {
-  source = "./modules/launch-configuration"
-  name_prefix = "${var.name}-${var.env}-web"
-  image_id = "${var.image_id}"
-  instance_type = "t2.micro"
+  source               = "./modules/launch-configuration"
+  name_prefix          = "${var.name}-${var.env}-web"
+  image_id             = "${var.image_id}"
+  instance_type        = "t2.micro"
   iam_instance_profile = "${module.iam_instance_profile.name}"
-  key_name = "${module.aws_ec2_key.key_name}"
-  security_groups = "${module.sg_web.id}"
-  volume_size = "20"
+  key_name             = "${module.aws_ec2_key.key_name}"
+  security_groups      = "${module.sg_web.id}"
+  volume_size          = "20"
 }
 
 ############################### ASG #####################
 module "asg_jump_host" {
-  source = "./modules/asg"
-  name = "${var.name}-${var.env}-jump"
+  source               = "./modules/asg"
+  name                 = "${var.name}-${var.env}-jump"
   launch_configuration = "${module.jump_host_lamunch_configuraions.id}"
-  subnet_a = "${module.pub_subnet_a.subnet_id}"
-  subnet_b = "${module.pub_subnet_b.subnet_id}"
-  env = "${var.env}"
+  subnet_a             = "${module.pub_subnet_a.subnet_id}"
+  subnet_b             = "${module.pub_subnet_b.subnet_id}"
+  env                  = "${var.env}"
 }
-
 
 module "asg_web_servers" {
-  source = "./modules/asg"
-  name = "${var.name}-${var.env}-web"
+  source               = "./modules/asg"
+  name                 = "${var.name}-${var.env}-web"
   launch_configuration = "${module.web_server_lamunch_configuraions.id}"
-  subnet_a = "${module.priv_subnet_a.subnet_id}"
-  subnet_b = "${module.priv_subnet_b.subnet_id}"
-  env = "${var.env}"
+  subnet_a             = "${module.priv_subnet_a.subnet_id}"
+  subnet_b             = "${module.priv_subnet_b.subnet_id}"
+  env                  = "${var.env}"
 }
 
+################################### RDS #####################
+
+module "rds_sg_group" {
+  source   = "./modules/db-subnet-group"
+  name     = "${var.name}-${var.env}-db-sg-group"
+  subnet_a = "${module.db_subnet_a.subnet_id}"
+  subnet_b = "${module.db_subnet_b.subnet_id}"
+  tags     = "${local.common_tags}"
+}
+
+module "rds_cluster" {
+  source                 = "./modules/rds"
+  c_name                 = "${var.name}-${var.env}"
+  database_name          = "dbtest"
+  db_subnet_group_name   = "${module.rds_sg_group.name}"
+  tags                   = "${local.common_tags}"
+  vpc_security_group_ids = "${module.sg_db.id}"
+  vpc_rds_subnet_ids     = "${module.db_subnet_a.subnet_id},${module.db_subnet_b.subnet_id}"
+}

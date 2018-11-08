@@ -1,3 +1,3 @@
-variable "name" { }
-variable "role" { }
-variable "policy" { }
+variable "name" {}
+variable "role" {}
+variable "policy" {}

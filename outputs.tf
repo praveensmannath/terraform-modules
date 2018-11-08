@@ -193,6 +193,7 @@ output "db_a_rta" {
 output "db_b_rta" {
   value = "${module.db_b_rta.rta_id}"
 }
+
 ##################################### ROUTES ####################
 
 output "public_routes_destination_cidr_block" {

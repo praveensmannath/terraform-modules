@@ -5,7 +5,6 @@ variable "instance_type" {}
 
 variable "key_name" {}
 
-
 variable "security_groups" {}
 
 variable "associate_public_ip_address" {
@@ -13,16 +12,16 @@ variable "associate_public_ip_address" {
 }
 
 variable "user_data" {
-    default = "echo hello"
+  default = "echo hello"
 }
 
 variable "volume_type" {
   default = "gp2"
 }
-variable "iam_instance_profile" {
-    default = ""
-}
 
+variable "iam_instance_profile" {
+  default = ""
+}
 
 variable "volume_size" {
   default = "40"
@@ -41,6 +40,5 @@ variable "enable_monitoring" {
 }
 
 variable "role_name" {
-    default = ""
-  
+  default = ""
 }
