@@ -306,9 +306,30 @@ data "template_file" "iam_role_s3" {
   }
 }
 
-module "iam_role_policy" {
+module "iam_role_s3_policy" {
    source = "./modules/iam-role-policy"
-   name = "${var.name}-${var.env}-policy"
+   name = "${var.name}-${var.env}-s3_policy"
    role = "${var.name}-${var.env}-role"
    policy = "${data.template_file.iam_role_s3.rendered}"
+}
+################################ ECR ##############################
+
+module "ecr" {
+   source = "./modules/ecr"
+   name = "${var.name}-${var.env}-${var.ecrname}"
+}
+
+data "template_file" "iam_role_erc" {
+  template = "${file("data/iam-policy/ecr")}"
+
+  vars {
+    ecrARN = "${module.ecr.arn}"
+  }
+}
+
+module "iam_role_ecr_policy" {
+   source = "./modules/iam-role-policy"
+   name = "${var.name}-${var.env}-ecr-policy"
+   role = "${var.name}-${var.env}-role"
+   policy = "${data.template_file.iam_role_erc.rendered}"
 }
