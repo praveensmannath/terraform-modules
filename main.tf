@@ -283,3 +283,11 @@ module "sg_rules_elb_443" {
   protocol = "tcp"
 }
 
+################################# S3 bucket ####################
+module "create_s3_bucket" {
+   source = "./modules/s3bucket"
+   name = "${var.name}-${var.env}-${var.bucket-name}"
+   tags = "${local.common_tags}"
+   versioning = "false"
+}
+
