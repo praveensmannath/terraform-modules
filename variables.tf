@@ -2,9 +2,6 @@ variable "region" {
   default = "us-east-1"
 }
 
-variable "s3bucket" {
-  default = ""
-}
 
 variable "access_key" {
   default = ""
@@ -63,7 +60,7 @@ variable "db_subnet_b" {
 ##############S3 ####################
 
 variable "bucket-name" {
-  default = "adidas-test-123"
+  default = "test-123"
 }
 
 variable "ecrname" {
