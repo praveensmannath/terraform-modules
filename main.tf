@@ -290,4 +290,25 @@ module "create_s3_bucket" {
    tags = "${local.common_tags}"
    versioning = "false"
 }
+###################################IAM ###########################
+module "iam_role" {
+  source = "./modules/iam-role"
+  name = "${var.name}-${var.env}-role"
+  description = "IAM role for accessing s3 buckets from ec2"
+  role_policy = "${file("${path.module}/data/iam-roles/ec2-iam-role")}"
+}
 
+data "template_file" "iam_role_s3" {
+  template = "${file("data/iam-policy/s3-bucket-access")}"
+
+  vars {
+    s3ARN = "${module.create_s3_bucket.arn}"
+  }
+}
+
+module "iam_role_policy" {
+   source = "./modules/iam-role-policy"
+   name = "${var.name}-${var.env}-policy"
+   role = "${var.name}-${var.env}-role"
+   policy = "${data.template_file.iam_role_s3.rendered}"
+}
