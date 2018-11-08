@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Stmt1541666669360",
+      "Action": "ecr:*",
+      "Effect": "Allow",
+      "Resource": "${ecrARN}"
+    }
+  ]
+}
