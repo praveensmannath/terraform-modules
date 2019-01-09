@@ -1,9 +1,15 @@
 variable "vpc_id" { }
 
-variable "cidr" {
+variable "subnets" {
+  type = "list"
+}
+variable "azs" {
+  type = "list"
+}
+variable "name" {
   
 }
-variable "az" {
+variable "SubnetType" {
   
 }
 
