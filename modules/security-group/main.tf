@@ -1,7 +1,8 @@
 resource "aws_security_group" "sg" {
-  name        = "${var.name}"
+  count       = "${length(var.sgs)}"
+  name        = "${element(keys(var.sgs), count.index)}"
   vpc_id      = "${var.vpc_id}"
-  description = "${var.description}"
+  description = "${element(values(var.sgs), count.index)}"
 
   tags = "${var.tags}"
 }

@@ -1,8 +1,8 @@
-variable "name" {}
+variable "sgs" {
+  type = "map"
+}
 
 variable "vpc_id" {}
-
-variable "description" {}
 
 variable "tags" {
   type = "map"
