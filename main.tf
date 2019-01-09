@@ -14,58 +14,43 @@ locals {
 
 module "vpc" {
   source = "./modules/vpc"
+  cidr   = "${var.cidr}"
   tags   = "${local.common_tags}"
 }
 
-############################# Public Subnets #########################
-module "pub_subnet_a" {
-  source = "./modules/subnet"
-  vpc_id = "${module.vpc.vpc_id}"
-  cidr   = "${var.public_subnet_a}"
-  az     = "${var.region}a"
-  tags   = "${merge(map("Name", "${var.name}-pub-a"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "Public"))}"
-}
+data "aws_availability_zones" "available" {}
 
-module "pub_subnet_b" {
-  source = "./modules/subnet"
-  vpc_id = "${module.vpc.vpc_id}"
-  cidr   = "${var.public_subnet_b}"
-  az     = "${var.region}b"
-  tags   = "${merge(map("Name", "${var.name}-pub-b"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "Public"))}"
+############################# Public Subnets #########################
+module "pub_subnet" {
+  source     = "./modules/subnet"
+  vpc_id     = "${module.vpc.vpc_id}"
+  subnets    = "${var.public_subnets}"
+  azs        = "${data.aws_availability_zones.available.names}"
+  name       = "${var.name}"
+  SubnetType = "public"
+  tags       = "${merge(map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "public"))}"
 }
 
 ############################# Private Subnets #########################
-module "priv_subnet_a" {
-  source = "./modules/subnet"
-  vpc_id = "${module.vpc.vpc_id}"
-  cidr   = "${var.private_subnet_a}"
-  az     = "${var.region}a"
-  tags   = "${merge(map("Name", "${var.name}-priv-a"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "Private"))}"
-}
-
-module "priv_subnet_b" {
-  source = "./modules/subnet"
-  vpc_id = "${module.vpc.vpc_id}"
-  cidr   = "${var.private_subnet_b}"
-  az     = "${var.region}b"
-  tags   = "${merge(map("Name", "${var.name}-priv-b"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "Private"))}"
+module "priv_subnet" {
+  source     = "./modules/subnet"
+  vpc_id     = "${module.vpc.vpc_id}"
+  subnets    = "${var.private_subnets}"
+  azs        = "${data.aws_availability_zones.available.names}"
+  name       = "${var.name}"
+  SubnetType = "private"
+  tags       = "${merge(map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "private"))}"
 }
 
 ############################# Database Subnets #########################
-module "db_subnet_a" {
-  source = "./modules/subnet"
-  vpc_id = "${module.vpc.vpc_id}"
-  cidr   = "${var.db_subnet_a}"
-  az     = "${var.region}a"
-  tags   = "${merge(map("Name", "${var.name}-db-a"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "DB-Private"))}"
-}
-
-module "db_subnet_b" {
-  source = "./modules/subnet"
-  vpc_id = "${module.vpc.vpc_id}"
-  cidr   = "${var.db_subnet_b}"
-  az     = "${var.region}b"
-  tags   = "${merge(map("Name", "${var.name}-db-b"), map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "db-private"))}"
+module "db_subnet" {
+  source     = "./modules/subnet"
+  vpc_id     = "${module.vpc.vpc_id}"
+  subnets    = "${var.db_subnets}"
+  azs        = "${data.aws_availability_zones.available.names}"
+  name       = "${var.name}"
+  SubnetType = "database"
+  tags       = "${merge(map("ENV", "${var.env}"), map("CREATED_BY", "${var.created_by}") , map("SubnetType", "database"))}"
 }
 
 ############################ IGW #####################################
@@ -87,7 +72,7 @@ module "eip" {
 module "nat" {
   source    = "./modules/nat-gateway"
   eip_id    = "${module.eip.eip_id}"
-  subnet_id = "${module.pub_subnet_a.subnet_id}"
+  subnet_id = "${module.pub_subnet.subnet_id[0]}"
   tags      = "${merge(local.common_tags)}"
 }
 
@@ -105,39 +90,21 @@ module "private_rt" {
 }
 
 ############################ Route Table Asssociation #############################
-module "pub_a_rta" {
+module "pub_rta" {
   source         = "./modules/route-table-association"
-  subnet_id      = "${module.pub_subnet_a.subnet_id}"
+  subnets        = "${module.pub_subnet.subnet_id}"
   route_table_id = "${module.public_rt.rt_id}"
 }
 
-module "pub_b_rta" {
+module "priv_rta" {
   source         = "./modules/route-table-association"
-  subnet_id      = "${module.pub_subnet_b.subnet_id}"
-  route_table_id = "${module.public_rt.rt_id}"
-}
-
-module "priv_a_rta" {
-  source         = "./modules/route-table-association"
-  subnet_id      = "${module.priv_subnet_a.subnet_id}"
+  subnets        = "${module.priv_subnet.subnet_id}"
   route_table_id = "${module.private_rt.rt_id}"
 }
 
-module "priv_b_rta" {
+module "db_rta" {
   source         = "./modules/route-table-association"
-  subnet_id      = "${module.priv_subnet_b.subnet_id}"
-  route_table_id = "${module.private_rt.rt_id}"
-}
-
-module "db_a_rta" {
-  source         = "./modules/route-table-association"
-  subnet_id      = "${module.db_subnet_a.subnet_id}"
-  route_table_id = "${module.private_rt.rt_id}"
-}
-
-module "db_b_rta" {
-  source         = "./modules/route-table-association"
-  subnet_id      = "${module.db_subnet_b.subnet_id}"
+  subnets        = "${module.db_subnet.subnet_id}"
   route_table_id = "${module.private_rt.rt_id}"
 }
 
@@ -154,64 +121,20 @@ module "private_route" {
   route_table_id = "${module.private_rt.rt_id}"
 }
 
-################################# SEC Groups  ############################################
-
-module "sg_elb" {
-  source      = "./modules/security-group"
-  name        = "elb_${var.name}"
-  vpc_id      = "${module.vpc.vpc_id}"
-  description = "SG for Load balancer"
-  tags        = "${local.common_tags}"
+# ################################# SEC Groups  ############################################
+module "sg" {
+  source = "./modules/security-group"
+  vpc_id = "${module.vpc.vpc_id}"
+  tags   = "${local.common_tags}"
+  sgs    = "${var.sgs}"
 }
 
-module "sg_web" {
-  source      = "./modules/security-group"
-  name        = "web_${var.name}"
-  vpc_id      = "${module.vpc.vpc_id}"
-  description = "SG for Web Server"
-  tags        = "${local.common_tags}"
-}
+# ################################# SEC Group Rules Egress############################################
 
-module "sg_jumphost" {
-  source      = "./modules/security-group"
-  name        = "jumphost_${var.name}"
-  vpc_id      = "${module.vpc.vpc_id}"
-  description = "SF for Jump Host"
-  tags        = "${local.common_tags}"
-}
-
-module "sg_db" {
-  source      = "./modules/security-group"
-  name        = "db_${var.name}"
-  vpc_id      = "${module.vpc.vpc_id}"
-  description = "SG for Aurora DB"
-  tags        = "${local.common_tags}"
-}
-
-################################# SEC Group Rules Egress############################################
-
-module "esg_rules_jump_host" {
+module "egress_rules" {
   source            = "./modules/security-group-rules-cidr"
   type              = "egress"
-  security_group_id = "${module.sg_jumphost.id}"
-}
-
-module "esg_rules_app_host" {
-  source            = "./modules/security-group-rules-cidr"
-  type              = "egress"
-  security_group_id = "${module.sg_web.id}"
-}
-
-module "esg_rules_db_host" {
-  source            = "./modules/security-group-rules-cidr"
-  type              = "egress"
-  security_group_id = "${module.sg_db.id}"
-}
-
-module "sg_rules_elb" {
-  source            = "./modules/security-group-rules-cidr"
-  type              = "egress"
-  security_group_id = "${module.sg_elb.id}"
+  security_group_id = "${module.sg.id}"
 }
 
 ################################# SEC Group Rules ingress############################################
@@ -225,6 +148,7 @@ module "sg_rules_jump_host_22" {
   protocol          = "tcp"
 }
 
+
 module "sg_rules_app_host_22" {
   source                   = "./modules/security-group-rules-sg"
   type                     = "ingress"
@@ -234,6 +158,7 @@ module "sg_rules_app_host_22" {
   to_port                  = "22"
   protocol                 = "tcp"
 }
+
 
 module "sg_rules_app_host_80" {
   source                   = "./modules/security-group-rules-sg"
@@ -245,6 +170,7 @@ module "sg_rules_app_host_80" {
   protocol                 = "tcp"
 }
 
+
 module "sg_rules_app_host_443" {
   source                   = "./modules/security-group-rules-sg"
   type                     = "ingress"
@@ -254,6 +180,7 @@ module "sg_rules_app_host_443" {
   to_port                  = "443"
   protocol                 = "tcp"
 }
+
 
 module "sg_rules_db_host_3306" {
   source                   = "./modules/security-group-rules-sg"
@@ -265,6 +192,7 @@ module "sg_rules_db_host_3306" {
   protocol                 = "tcp"
 }
 
+
 module "sg_rules_elb_80" {
   source            = "./modules/security-group-rules-cidr"
   type              = "ingress"
@@ -273,6 +201,7 @@ module "sg_rules_elb_80" {
   to_port           = "80"
   protocol          = "tcp"
 }
+
 
 module "sg_rules_elb_443" {
   source            = "./modules/security-group-rules-cidr"
@@ -283,6 +212,7 @@ module "sg_rules_elb_443" {
   protocol          = "tcp"
 }
 
+
 ################################# S3 bucket ####################
 module "create_s3_bucket" {
   source     = "./modules/s3bucket"
@@ -290,6 +220,7 @@ module "create_s3_bucket" {
   tags       = "${local.common_tags}"
   versioning = "false"
 }
+
 
 ###################################IAM ###########################
 module "iam_role" {
@@ -299,13 +230,16 @@ module "iam_role" {
   role_policy = "${file("${path.module}/data/iam-roles/ec2-iam-role")}"
 }
 
+
 data "template_file" "iam_role_s3" {
   template = "${file("data/iam-policy/s3-bucket-access")}"
+
 
   vars {
     s3ARN = "${module.create_s3_bucket.arn}"
   }
 }
+
 
 module "iam_role_s3_policy" {
   source = "./modules/iam-role-policy"
@@ -314,20 +248,25 @@ module "iam_role_s3_policy" {
   policy = "${data.template_file.iam_role_s3.rendered}"
 }
 
+
 ################################ ECR ##############################
+
 
 module "ecr" {
   source = "./modules/ecr"
   name   = "${var.name}-${var.env}-${var.ecrname}"
 }
 
+
 data "template_file" "iam_role_erc" {
   template = "${file("data/iam-policy/ecr")}"
+
 
   vars {
     ecrARN = "${module.ecr.arn}"
   }
 }
+
 
 module "iam_role_ecr_policy" {
   source = "./modules/iam-role-policy"
@@ -336,13 +275,16 @@ module "iam_role_ecr_policy" {
   policy = "${data.template_file.iam_role_erc.rendered}"
 }
 
+
 ################################### Launch Configuraions #########################
+
 
 module "aws_ec2_key" {
   source = "./modules/ec2-key"
   name = "${var.name}-${var.env}"
   public_key = "${file("${path.module}/data/pub_keys/id_rsa.pub")}"
 }
+
 
 module "jump_host_lamunch_configuraions" {
   source = "./modules/launch-configuration"
@@ -355,11 +297,13 @@ module "jump_host_lamunch_configuraions" {
   volume_size = "10"
 }
 
+
 module "iam_instance_profile" {
   source = "./modules/iam-instance-profile"
   name_prefix = "${var.name}-${var.env}"
   role = "${module.iam_role.name}"
 }
+
 
 module "web_server_lamunch_configuraions" {
   source = "./modules/launch-configuration"
@@ -371,6 +315,7 @@ module "web_server_lamunch_configuraions" {
   security_groups = "${module.sg_web.id}"
   volume_size = "20"
 }
+
 
 ############################### ASG #####################
 module "asg_jump_host" {

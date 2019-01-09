@@ -15,7 +15,7 @@ variable "secret_key" {
 }
 
 variable "name" {
-  default = ""
+  default = "test"
 }
 
 variable "env" {
@@ -27,38 +27,30 @@ variable "created_by" {
 }
 
 
-variable "azs" {
-  type = "list"
-  default = ["a","b","c","d","e","f"]
-}
-
-
 ###############################################SUBNETS########################
+variable "cidr" {
+  default = "10.11.0.0/16"
+}
 
 
 ###################Public###################
-variable "public_subnet_a" {
-  default = "10.10.1.0/24"
+variable "public_subnets" {
+  default = ["10.11.2.0/24","10.11.1.0/24"]
 }
-
-variable "public_subnet_b" {
-  default = "10.10.2.0/24"
-}
-
-
 
 ###################Private###################
-variable "private_subnet_a" {
-  default = "10.10.3.0/24"
-}
-variable "private_subnet_b" {
-  default = "10.10.4.0/24"
+variable "private_subnets" {
+  default = ["10.11.3.0/24","10.11.4.0/24"]
 }
 
 ###################DB###################
-variable "db_subnet_a" {
-  default = "10.10.5.0/24"
+variable "db_subnets" {
+  default = ["10.11.5.0/24","10.11.6.0/24"]
 }
-variable "db_subnet_b" {
-  default = "10.10.6.0/24"
+
+variable "sgs" {
+  default = {"elb"="SG for ELB"
+  "web"= "SG for web"
+  "jumphost"= "SG for Jumphost"
+  "db"="SG for DB"}
 }
